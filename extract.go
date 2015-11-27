@@ -16,6 +16,7 @@ var tags []string = make([]string, 0)
 var classes []string = make([]string, 0)
 var ids []string = make([]string, 0)
 var search string = ""
+var exclude string = ""
 var printed []string = make([]string, 0)
 
 func printl(s string) {
@@ -76,17 +77,17 @@ func parseHtml(u string, r io.Reader) {
 			case "a":
 				for _, a := range token.Attr {
 					if a.Key == "href" &&
-						strings.Contains(a.Val, search) &&
-						(!strings.HasPrefix(a.Val, "mailto:") || in(tags, "email")) {
+						strings.Contains(a.Val, search) && (exclude == "" || !strings.Contains(a.Val, exclude)) &&
+						!strings.HasPrefix(a.Val, "mailto:") || in(tags, "email") {
 						if !strings.HasPrefix(a.Val, "mailto:") && in(tags, "email") {
 							continue
 						}
-						printl(fixUrl(u, a.Val) + " ")
+						printl(fixUrl(u, a.Val))
 					}
 				}
 			case "img":
 				for _, a := range token.Attr {
-					if a.Key == "src" && strings.Contains(a.Val, search) {
+					if a.Key == "src" && strings.Contains(a.Val, search) && (exclude == "" || !strings.Contains(a.Val, exclude)) {
 						printl(fixUrl(u, a.Val))
 					}
 				}
@@ -114,6 +115,8 @@ func main() {
 			tags = append(tags, arg[1:])
 		} else if arg[0] == '?' {
 			search = arg[1:]
+		} else if arg[0] == '^' {
+			exclude = arg[1:]
 		} else {
 			if !strings.HasPrefix(arg, "http") {
 				arg = "http://" + arg
